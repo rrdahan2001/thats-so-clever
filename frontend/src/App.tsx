@@ -33,10 +33,16 @@ function App() {
     socket?.emit('start-game');
   };
 
+  const handleBackToLanding = () => {
+    setRoomId(null);
+    setPlayerId(null);
+  };
+
   if (!connected) {
     return (
       <div className="app">
         <p>Connecting to server...</p>
+        <p className="connecting-note">First load may take up to 2 minutes (free hosting cold start).</p>
       </div>
     );
   }
@@ -89,6 +95,7 @@ function App() {
           socket={socket}
           gameState={gameState}
           playerId={playerId}
+          onBackToLanding={handleBackToLanding}
         />
       )}
     </div>

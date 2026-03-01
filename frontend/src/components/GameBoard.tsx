@@ -11,6 +11,7 @@ interface GameBoardProps {
   socket: Socket | null;
   gameState: GameState | null;
   playerId: string | null;
+  onBackToLanding?: () => void;
 }
 
 function computeBlueWhiteSum(
@@ -26,7 +27,7 @@ function computeBlueWhiteSum(
   return (blue?.value ?? 0) + (white?.value ?? 0);
 }
 
-export function GameBoard({ socket, gameState, playerId }: GameBoardProps) {
+export function GameBoard({ socket, gameState, playerId, onBackToLanding }: GameBoardProps) {
   const handleRoll = useCallback(() => {
     socket?.emit('roll-dice');
   }, [socket]);
@@ -78,6 +79,11 @@ export function GameBoard({ socket, gameState, playerId }: GameBoardProps) {
             </div>
           ))}
         </div>
+        {onBackToLanding && (
+          <button className="back-to-landing" onClick={onBackToLanding}>
+            Back to landing page
+          </button>
+        )}
       </div>
     );
   }

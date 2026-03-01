@@ -40,6 +40,12 @@
   margin-bottom: 1rem;
 }
 
+.connecting-note {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
 .place-prompt-area {
   display: flex;
   flex-direction: column;
@@ -599,4 +605,11 @@
 .final-scores {
   margin-top: 1rem;
   font-size: 1.1rem;
+}
+
+.game-over .back-to-landing {
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
 }
