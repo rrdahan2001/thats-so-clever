@@ -18,25 +18,25 @@ const io = new Server(httpServer, {
 
 const rooms = new Map<string, GameRoom>();
 
-function getOrCreateRoom(roomId: string): GameRoom {
-  let room = rooms.get(roomId);
-  if (!room) {
-    room = new GameRoom(roomId, io);
-    rooms.set(roomId, room);
-  }
-  return room;
-}
-
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  socket.on('join-room', (data: { roomId: string; playerId: string; playerName: string }) => {
-    const { roomId, playerId, playerName } = data || {};
+  socket.on('join-room', (data: { roomId: string; playerId: string; playerName: string; createIfNotExists?: boolean }) => {
+    const { roomId, playerId, playerName, createIfNotExists } = data || {};
     if (!roomId || !playerId || !playerName) {
       socket.emit('error', 'Missing roomId, playerId, or playerName');
       return;
     }
-    const room = getOrCreateRoom(roomId);
+    let room = rooms.get(roomId);
+    if (!room) {
+      if (createIfNotExists) {
+        room = new GameRoom(roomId, io);
+        rooms.set(roomId, room);
+      } else {
+        socket.emit('error', 'Room not found. Please check the room code and try again.');
+        return;
+      }
+    }
     const ok = room.addPlayer(socket.id, playerId, playerName);
     if (!ok) {
       socket.emit('error', 'Could not join room (full or game started)');

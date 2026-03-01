@@ -9,7 +9,15 @@ function App() {
   const { socket, connected } = useSocket();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const { gameState, lobbyPlayers, error, setError } = useGameState(socket, playerId);
+
+  const handleCopyRoomCode = () => {
+    if (roomId && navigator.clipboard?.writeText(roomId)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleJoined = (r: string, p: string, _name: string) => {
     setRoomId(r);
@@ -53,7 +61,14 @@ function App() {
         <div className="lobby-waiting">
           <p>Room: <strong>{roomId}</strong></p>
           <p>Share this code with friends to join.</p>
-          <button onClick={() => navigator.clipboard?.writeText(roomId)}>Copy room code</button>
+          <div className="copy-room-code">
+            <button onClick={handleCopyRoomCode}>Copy room code</button>
+            {copied && (
+              <span className="copy-tooltip" role="status">
+                Copied!
+              </span>
+            )}
+          </div>
           {lobbyPlayers.length > 0 && (
             <ul className="lobby-players">
               {lobbyPlayers.map((p) => (

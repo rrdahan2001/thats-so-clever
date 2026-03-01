@@ -32,7 +32,13 @@ export class GameRoom {
     if (playerId) {
       const player = this.players.get(playerId);
       if (player) {
-        player.isConnected = false;
+        if (this.engine) {
+          player.isConnected = false;
+        } else {
+          this.players.delete(playerId);
+          const players = this.getPlayerList();
+          this.io.to(this.id).emit('lobby-update', { roomId: this.id, players });
+        }
       }
     }
   }

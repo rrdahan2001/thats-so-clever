@@ -6,7 +6,10 @@ interface LobbyProps {
   onJoined: (roomId: string, playerId: string, playerName: string) => void;
 }
 
+type LobbyMode = 'choice' | 'join' | 'create';
+
 export function Lobby({ socket, onJoined }: LobbyProps) {
+  const [mode, setMode] = useState<LobbyMode>('choice');
   const [roomId, setRoomId] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [joining, setJoining] = useState(false);
@@ -33,9 +36,12 @@ export function Lobby({ socket, onJoined }: LobbyProps) {
     setRoomId(newRoomId);
     setJoining(true);
     const playerId = `p-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    socket.emit('join-room', { roomId: newRoomId, playerId, playerName: playerName.trim() });
+    socket.emit('join-room', { roomId: newRoomId, playerId, playerName: playerName.trim(), createIfNotExists: true });
     socket.once('joined', () => {
       onJoined(newRoomId, playerId, playerName.trim());
+      setJoining(false);
+    });
+    socket.once('error', () => {
       setJoining(false);
     });
   };
@@ -43,30 +49,70 @@ export function Lobby({ socket, onJoined }: LobbyProps) {
   return (
     <div className="lobby">
       <h1>That&apos;s So Clever</h1>
-      <form onSubmit={handleJoin}>
-        <input
-          type="text"
-          placeholder="Room code"
-          value={roomId}
-          onChange={(e) => setRoomId(e.target.value)}
-          disabled={joining}
-        />
-        <input
-          type="text"
-          placeholder="Your name"
-          value={playerName}
-          onChange={(e) => setPlayerName(e.target.value)}
-          disabled={joining}
-        />
-        <button type="submit" disabled={!roomId.trim() || !playerName.trim() || joining}>
-          Join Room
-        </button>
-      </form>
-      <form onSubmit={handleCreate}>
-        <button type="submit" disabled={!playerName.trim() || joining}>
-          Create New Room
-        </button>
-      </form>
+
+      {mode === 'choice' && (
+        <div className="lobby-choice">
+          <p>What would you like to do?</p>
+          <button type="button" onClick={() => setMode('join')}>
+            Join Game
+          </button>
+          <button type="button" onClick={() => setMode('create')}>
+            Create New Room
+          </button>
+        </div>
+      )}
+
+      {mode === 'join' && (
+        <form onSubmit={handleJoin} className="lobby-form">
+          <input
+            type="text"
+            placeholder="Room code"
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            disabled={joining}
+          />
+          <input
+            type="text"
+            placeholder="Your name"
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            disabled={joining}
+          />
+          <div className="lobby-actions">
+            <button type="button" onClick={() => setMode('choice')} disabled={joining}>
+              Back
+            </button>
+            <span
+              title={!roomId.trim() || !playerName.trim() ? 'Enter room code and your name to join' : undefined}
+              className="lobby-button-wrapper"
+            >
+              <button type="submit" disabled={!roomId.trim() || !playerName.trim() || joining}>
+                Join Room
+              </button>
+            </span>
+          </div>
+        </form>
+      )}
+
+      {mode === 'create' && (
+        <form onSubmit={handleCreate} className="lobby-form">
+          <input
+            type="text"
+            placeholder="Your name"
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            disabled={joining}
+          />
+          <div className="lobby-actions">
+            <button type="button" onClick={() => setMode('choice')} disabled={joining}>
+              Back
+            </button>
+            <button type="submit" disabled={!playerName.trim() || joining}>
+              Create New Room
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
