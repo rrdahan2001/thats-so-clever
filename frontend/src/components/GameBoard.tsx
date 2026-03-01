@@ -61,7 +61,9 @@ export function GameBoard({ socket, gameState, playerId }: GameBoardProps) {
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const isMyTurn = currentPlayer?.id === playerId;
   const isPassivePhase = gameState.phase === 'passive';
-  const isPassivePlayer = !!playerId && currentPlayer?.id !== playerId;
+  const isSolo = gameState.players.length === 1;
+  const isPassivePlayer =
+    (!!playerId && currentPlayer?.id !== playerId) || (isSolo && isPassivePhase);
 
   if (gameState.gameOver) {
     const winner = gameState.players.find((p) => p.id === gameState.winnerId);

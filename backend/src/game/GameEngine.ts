@@ -365,7 +365,9 @@ export class GameEngine {
     this.state.rollsThisTurn = 0;
 
     const passiveCount = this.state.players.filter((p) => p.id !== this.getCurrentPlayer()?.id).length;
-    if (passiveCount === 0) {
+    const isSolo = this.state.players.length === 1;
+    // Solo: player is both active and passive each round — enter passive phase for them to choose from silver tray
+    if (passiveCount === 0 && !isSolo) {
       this.advanceTurn();
     } else {
       this.state.phase = 'passive';
@@ -393,7 +395,8 @@ export class GameEngine {
     }
     const playerIdx = this.state.players.findIndex((p) => p.id === playerId);
     if (playerIdx < 0) return { success: false, error: 'Unknown player' };
-    if (playerIdx === this.state.currentPlayerIndex) {
+    const isSolo = this.state.players.length === 1;
+    if (!isSolo && playerIdx === this.state.currentPlayerIndex) {
       return { success: false, error: 'Active player does not choose in passive phase' };
     }
     if (this.passivePlayersChosen.has(playerId)) {
@@ -411,9 +414,8 @@ export class GameEngine {
     this.passivePlayersChosen.add(playerId);
     const player = this.state.players[playerIdx];
     this.applyPassivePlacement(player.sheet, die, asColor ?? die.color);
-    const allChosen =
-      this.state.players.filter((p) => p.id !== this.getCurrentPlayer()?.id).length ===
-      this.passivePlayersChosen.size;
+    const passivePlayerCount = isSolo ? 1 : this.state.players.filter((p) => p.id !== this.getCurrentPlayer()?.id).length;
+    const allChosen = this.passivePlayersChosen.size === passivePlayerCount;
     if (allChosen) {
       this.advanceTurn();
     }
