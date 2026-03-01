@@ -45,6 +45,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: github-pages
     permissions:
+      contents: read   # Required for actions/checkout to fetch the repo
       pages: write
       id-token: write
 
