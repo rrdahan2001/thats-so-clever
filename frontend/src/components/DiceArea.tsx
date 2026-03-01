@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Die, ScoringSheet } from '../types/game';
 import { getDieValidity, getValidColorsForWhite } from '../utils/dieValidity';
 import { WhiteDieColorPicker } from './WhiteDieColorPicker';
+import { DieFace } from './DieFace';
 
 interface DiceAreaProps {
   dice: Die[];
@@ -44,6 +45,7 @@ export function DiceArea({
   onPassTurn,
 }: DiceAreaProps) {
   const [whitePicker, setWhitePicker] = useState<{ dieIndex: number; value: number } | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
 
   const available = phase === 'selecting' && isMyTurn;
   const tray = isPassivePhase && isPassivePlayer ? silverTray : [];
@@ -71,6 +73,12 @@ export function DiceArea({
     }
   };
 
+  const handleRoll = useCallback(() => {
+    setIsRolling(true);
+    onRoll();
+    setTimeout(() => setIsRolling(false), 700);
+  }, [onRoll]);
+
   return (
     <div className="dice-area">
       {whitePicker && (
@@ -82,8 +90,8 @@ export function DiceArea({
         />
       )}
       {showRoll && (
-        <button className="roll-btn" onClick={onRoll}>
-          Roll Dice
+        <button className="roll-btn" onClick={handleRoll} disabled={isRolling}>
+          {isRolling ? 'Rolling…' : 'Roll Dice'}
         </button>
       )}
       {selectedDie && (
@@ -105,13 +113,13 @@ export function DiceArea({
               key={`${die.color}-${i}`}
               className={`die ${die.color === 'white' ? 'die-white' : ''} ${!die.available ? 'used' : ''} ${available ? 'selectable' : ''} ${
                 selectedDie?.color === die.color && selectedDie?.value === die.value ? 'selected' : ''
-              } ${isInvalid ? 'invalid' : ''}`}
+              } ${isInvalid ? 'invalid' : ''} ${isRolling && die.available ? 'die-rolling' : ''}`}
               style={{ backgroundColor: COLOR_MAP[die.color] ?? '#888' }}
               onClick={() => available && die.available && validity.valid && onSelectDie(i)}
               disabled={!available || !die.available || !validity.valid}
-              title={isInvalid ? validity.reason : undefined}
+              title={isInvalid ? validity.reason : `${die.color} die: ${die.value}`}
             >
-              {die.value}
+              <DieFace value={die.value} />
             </button>
           );
         })}
@@ -129,9 +137,9 @@ export function DiceArea({
                 style={{ backgroundColor: COLOR_MAP[die.color] ?? '#888' }}
                 onClick={() => !isInvalid && handleTrayDieClick(i)}
                 disabled={isInvalid}
-                title={isInvalid ? validity.reason : die.color === 'white' ? 'Click to choose color' : undefined}
+                title={isInvalid ? validity.reason : die.color === 'white' ? 'Click to choose color' : `${die.color} die: ${die.value}`}
               >
-                {die.value}
+                <DieFace value={die.value} />
               </button>
             );
           })}
