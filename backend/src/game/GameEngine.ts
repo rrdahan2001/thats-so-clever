@@ -115,10 +115,6 @@ export class GameEngine {
     if (this.state.rollsThisTurn >= 3) {
       return { success: false, error: 'Already rolled 3 times' };
     }
-    if (this.state.rollsThisTurn === 0) {
-      this.blueDieValue = this.state.dice.find((d) => d.color === 'blue')?.value ?? 0;
-      this.whiteDieValue = this.state.dice.find((d) => d.color === 'white')?.value ?? 0;
-    }
     const available = this.state.dice.filter((d) => d.available);
     if (available.length === 0) {
       this.finishActiveTurn();
@@ -129,6 +125,8 @@ export class GameEngine {
         this.state.dice[i].value = this.rollDie();
       }
     }
+    this.blueDieValue = this.state.dice.find((d) => d.color === 'blue')?.value ?? 0;
+    this.whiteDieValue = this.state.dice.find((d) => d.color === 'white')?.value ?? 0;
     this.state.rollsThisTurn++;
     this.state.phase = 'selecting';
     this.state.selectedDie = null;
