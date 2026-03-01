@@ -52,6 +52,10 @@ export function GameBoard({ socket, gameState, playerId }: GameBoardProps) {
     [socket]
   );
 
+  const handlePassTurn = useCallback(() => {
+    socket?.emit('pass-turn');
+  }, [socket]);
+
   if (!gameState) return null;
   const blueWhiteSum = computeBlueWhiteSum(gameState);
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -97,6 +101,7 @@ export function GameBoard({ socket, gameState, playerId }: GameBoardProps) {
         onSelectDie={handleSelectDie}
         onRoll={handleRoll}
         onPassiveChoose={handlePassiveChoose}
+        onPassTurn={handlePassTurn}
       />
       <div className="sheets-container">
         {gameState.players.map((p) => (

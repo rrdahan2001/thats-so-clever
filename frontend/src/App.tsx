@@ -10,7 +10,7 @@ function App() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const { gameState, lobbyPlayers, error, setError } = useGameState(socket, playerId);
+  const { gameState, lobbyPlayers, error, setError, info } = useGameState(socket, playerId);
 
   const handleCopyRoomCode = () => {
     if (roomId && navigator.clipboard?.writeText(roomId)) {
@@ -57,6 +57,7 @@ function App() {
           {error}
         </p>
       )}
+      {info && <p className="info">{info}</p>}
       {showLobby ? (
         <div className="lobby-waiting">
           <p>Room: <strong>{roomId}</strong></p>

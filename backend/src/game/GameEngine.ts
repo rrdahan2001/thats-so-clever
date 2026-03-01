@@ -105,7 +105,7 @@ export class GameEngine {
     this.state.winnerId = winnerId;
   }
 
-  rollDice(playerId: string): { success: boolean; error?: string } {
+  rollDice(playerId: string): { success: boolean; error?: string; skipped?: boolean } {
     if (!this.isMyTurn(playerId)) {
       return { success: false, error: 'Not your turn' };
     }
@@ -132,10 +132,16 @@ export class GameEngine {
     this.state.rollsThisTurn++;
     this.state.phase = 'selecting';
     this.state.selectedDie = null;
+
+    const sheet = this.getCurrentPlayer()?.sheet;
+    if (sheet && !available.some((d) => this.hasValidPlacementForDie(sheet, d))) {
+      this.finishActiveTurn();
+      return { success: true, skipped: true };
+    }
     return { success: true };
   }
 
-  selectDie(playerId: string, dieIndex: number): { success: boolean; error?: string } {
+  selectDie(playerId: string, dieIndex: number): { success: boolean; error?: string; skipped?: boolean } {
     if (!this.isMyTurn(playerId)) {
       return { success: false, error: 'Not your turn' };
     }
@@ -160,6 +166,12 @@ export class GameEngine {
     }
     this.state.dice[dieIndex].available = false;
     this.state.phase = 'placing';
+
+    const sheet = this.getCurrentPlayer()?.sheet;
+    if (sheet && !this.hasValidPlacementForDie(sheet, this.state.selectedDie)) {
+      this.finishActiveTurn();
+      return { success: true, skipped: true };
+    }
     return { success: true };
   }
 
@@ -258,6 +270,67 @@ export class GameEngine {
     return b + w;
   }
 
+  /** Returns true if the die has at least one valid placement on the current player's sheet */
+  private hasValidPlacementForDie(sheet: ScoringSheet, die: Die): boolean {
+    const value = die.value;
+    const sum = this.getBlueWhiteSum();
+
+    if (die.color === 'white') {
+      return (
+        this.canPlaceYellow(sheet, value) ||
+        this.canPlaceBlue(sheet, sum) ||
+        this.canPlaceGreen(sheet, value) ||
+        this.canPlaceOrange(sheet) ||
+        this.canPlacePurple(sheet, value)
+      );
+    }
+
+    switch (die.color) {
+      case 'yellow':
+        return this.canPlaceYellow(sheet, value);
+      case 'blue':
+        return this.canPlaceBlue(sheet, sum);
+      case 'green':
+        return this.canPlaceGreen(sheet, value);
+      case 'orange':
+        return this.canPlaceOrange(sheet);
+      case 'purple':
+        return this.canPlacePurple(sheet, value);
+      default:
+        return false;
+    }
+  }
+
+  private canPlaceYellow(sheet: ScoringSheet, value: number): boolean {
+    const row = value - 1;
+    if (row < 0 || row >= 6) return false;
+    return sheet.yellow.marked[row]?.some((m) => !m) ?? false;
+  }
+
+  private canPlaceBlue(sheet: ScoringSheet, sum: number): boolean {
+    if (sum < 2 || sum > 12) return false;
+    const idx = sum - 2;
+    return !sheet.blue.marked[idx];
+  }
+
+  private canPlaceGreen(sheet: ScoringSheet, value: number): boolean {
+    const idx = sheet.green.marked.findIndex((v) => v === null);
+    if (idx < 0) return false;
+    const mins = [1, 2, 3, 4, 5, 6];
+    return value >= (mins[idx] ?? 0);
+  }
+
+  private canPlaceOrange(sheet: ScoringSheet): boolean {
+    return sheet.orange.values.some((v) => v === null);
+  }
+
+  private canPlacePurple(sheet: ScoringSheet, value: number): boolean {
+    const idx = sheet.purple.values.findIndex((v) => v === null);
+    if (idx < 0) return false;
+    const prev = idx === 0 ? 0 : (sheet.purple.values[idx - 1] ?? 0);
+    return prev === 6 || value > prev;
+  }
+
   private applyPlacement(
     sheet: ScoringSheet,
     area: string,
@@ -290,9 +363,30 @@ export class GameEngine {
     const available = this.state.dice.filter((d) => d.available);
     available.forEach((d) => this.silverTray.push({ ...d }));
     this.state.dice = this.state.dice.map((d) => ({ ...d, available: false }));
-    this.state.phase = 'passive';
     this.state.selectedDie = null;
     this.state.rollsThisTurn = 0;
+
+    const passiveCount = this.state.players.filter((p) => p.id !== this.getCurrentPlayer()?.id).length;
+    if (passiveCount === 0) {
+      this.advanceTurn();
+    } else {
+      this.state.phase = 'passive';
+    }
+  }
+
+  passTurn(playerId: string): { success: boolean; error?: string } {
+    if (!this.isMyTurn(playerId)) {
+      return { success: false, error: 'Not your turn' };
+    }
+    if (this.state.phase !== 'placing' || !this.state.selectedDie) {
+      return { success: false, error: 'No die selected to pass' };
+    }
+    const sheet = this.getCurrentPlayer()?.sheet;
+    if (!sheet || this.hasValidPlacementForDie(sheet, this.state.selectedDie)) {
+      return { success: false, error: 'You have a valid move — cannot pass' };
+    }
+    this.finishActiveTurn();
+    return { success: true };
   }
 
   passiveChooseDie(playerId: string, dieIndex: number, asColor?: DieColor): { success: boolean; error?: string } {

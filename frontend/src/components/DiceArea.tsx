@@ -16,6 +16,7 @@ interface DiceAreaProps {
   onSelectDie: (index: number) => void;
   onRoll: () => void;
   onPassiveChoose: (dieIndex: number, asColor?: string) => void;
+  onPassTurn?: () => void;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -40,6 +41,7 @@ export function DiceArea({
   onSelectDie,
   onRoll,
   onPassiveChoose,
+  onPassTurn,
 }: DiceAreaProps) {
   const [whitePicker, setWhitePicker] = useState<{ dieIndex: number; value: number } | null>(null);
 
@@ -85,7 +87,14 @@ export function DiceArea({
         </button>
       )}
       {selectedDie && (
-        <p className="place-prompt">Place your {selectedDie.color} die ({selectedDie.value}) on the board</p>
+        <div className="place-prompt-area">
+          <p className="place-prompt">Place your {selectedDie.color} die ({selectedDie.value}) on the board</p>
+          {mySheet && onPassTurn && !getDieValidity(mySheet, selectedDie, blueWhiteSum).valid && (
+            <button type="button" className="pass-turn-btn" onClick={onPassTurn}>
+              No playable moves — skip to next turn
+            </button>
+          )}
+        </div>
       )}
       <div className="dice-row">
         {dice.map((die, i) => {

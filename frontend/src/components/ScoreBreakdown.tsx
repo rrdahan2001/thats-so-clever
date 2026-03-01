@@ -16,6 +16,8 @@ export const SCORING_FORMULAS = {
   orange: 'Sum of values × multiplier (1x,1x,1x,2x,1x,3x)',
   purple: 'Sum of all values (each must be > previous, 6 resets)',
   fox: 'Foxes × lowest color score (0 if any color is 0)',
+  foxHowToEarn:
+    'Earn foxes by completing bonus spaces (marked with fox icons) in each color area: complete rows or columns in Yellow and Blue; mark specific bonus boxes in Green, Orange, and Purple. Each fox = lowest color score at game end.',
 };
 
 interface ScoreBreakdownProps {
@@ -58,14 +60,14 @@ export function ScoreBreakdown({ sheet }: ScoreBreakdownProps) {
       </ul>
       <div
         className={`fox-bonus-callout ${fox === 0 ? 'zero' : ''}`}
-        title={SCORING_FORMULAS.fox}
+        title={foxEarned ? SCORING_FORMULAS.fox : SCORING_FORMULAS.foxHowToEarn}
       >
         {foxEarned && fox > 0 ? (
           <>Fox bonus: {sheet.foxes} fox{sheet.foxes !== 1 ? 'es' : ''} × {Math.min(yellow, blue, green, orange, purple)} (lowest) = +{fox} pts</>
         ) : foxEarned && fox === 0 ? (
           <>Fox bonus: {sheet.foxes} fox{sheet.foxes !== 1 ? 'es' : ''} earned, but lowest color is 0 so no bonus yet</>
         ) : (
-          <>Fox bonus: Earn foxes from bonuses (row/column completions); each = lowest color score at game end</>
+          <>{SCORING_FORMULAS.foxHowToEarn}</>
         )}
       </div>
       <p className="total">Total: {total} pts</p>
@@ -84,6 +86,7 @@ export function ScoreBreakdown({ sheet }: ScoreBreakdownProps) {
           <dd>{SCORING_FORMULAS.purple}</dd>
           <dt>Fox</dt>
           <dd>{SCORING_FORMULAS.fox}</dd>
+          <dd className="fox-how-to">{SCORING_FORMULAS.foxHowToEarn}</dd>
         </dl>
       </details>
     </div>

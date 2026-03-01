@@ -80,6 +80,9 @@ export class GameRoom {
       socket.emit('error', result.error);
       return;
     }
+    if (result.skipped) {
+      this.io.to(this.id).emit('info', 'No playable moves — skipping to next turn');
+    }
     this.broadcastState();
   }
 
@@ -93,6 +96,9 @@ export class GameRoom {
     if (!result.success) {
       socket.emit('error', result.error);
       return;
+    }
+    if (result.skipped) {
+      this.io.to(this.id).emit('info', 'No playable moves — skipping to next turn');
     }
     this.broadcastState();
   }
@@ -108,6 +114,21 @@ export class GameRoom {
       socket.emit('error', result.error);
       return;
     }
+    this.broadcastState();
+  }
+
+  handlePassTurn(socket: Socket): void {
+    const player = this.getPlayerBySocket(socket.id);
+    if (!player || !this.engine) {
+      socket.emit('error', 'Not in game or game not started');
+      return;
+    }
+    const result = this.engine.passTurn(player.id);
+    if (!result.success) {
+      socket.emit('error', result.error);
+      return;
+    }
+    this.io.to(this.id).emit('info', 'No playable moves — skipping to next turn');
     this.broadcastState();
   }
 

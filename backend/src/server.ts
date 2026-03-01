@@ -94,6 +94,13 @@ io.on('connection', (socket) => {
     if (room) room.handlePassiveChoose(socket, data);
   });
 
+  socket.on('pass-turn', () => {
+    const roomId = Array.from(socket.rooms).find((r) => r !== socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (room) room.handlePassTurn(socket);
+  });
+
   socket.on('disconnect', () => {
     for (const [rid, room] of rooms) {
       room.removePlayer(socket.id);
