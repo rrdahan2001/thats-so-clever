@@ -29,6 +29,11 @@ Or run separately:
 - `PORT` - Server port (default: 3001)
 - `CORS_ORIGIN` - Frontend origin for CORS (default: http://localhost:5173)
 
-## Deployment
+## Deployment (free tier)
 
-See the plan document for deployment strategy (Vercel + Railway recommended).
+The CI workflow deploys when tests pass on `main`:
+
+- **Frontend**: GitHub Pages (Settings > Pages > Source: GitHub Actions)
+- **Backend**: Render free tier (add `RENDER_DEPLOY_HOOK` secret from Render Dashboard)
+
+Set `VITE_WS_URL` (repo variable) to your Render backend URL so the frontend connects to it.

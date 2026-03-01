@@ -1,5 +1,10 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# Build, test, and deploy (free tier).
+# When tests pass on push to main, deploys frontend to GitHub Pages and triggers backend on Render.
+#
+# Setup:
+# 1. Repo Settings > Pages > Source: GitHub Actions
+# 2. (Optional) vars.VITE_WS_URL = your Render backend URL (e.g. https://yourapp.onrender.com)
+# 3. (Optional) secrets.RENDER_DEPLOY_HOOK = from Render Dashboard > Service > Settings > Deploy Hook
 
 name: Node.js CI
 
@@ -10,8 +15,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  test:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     strategy:
@@ -20,14 +25,63 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm ci --prefix frontend
-    - run: npm ci --prefix backend
-    - run: npm run build --if-present
-    - run: npm test
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm ci --prefix frontend
+      - run: npm ci --prefix backend
+      - run: npm run build --if-present
+      - run: npm test
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    # Only deploy on push to main (not on PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: github-pages
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm ci --prefix frontend
+      - run: npm ci --prefix backend
+
+      # Build frontend for GitHub Pages (base path) + set VITE_WS_URL to your Render backend URL
+      - name: Build frontend
+        run: npm run build --prefix frontend
+        env:
+          VITE_WS_URL: ${{ vars.VITE_WS_URL }}
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+
+      # Deploy frontend to GitHub Pages (free)
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      # Trigger backend deploy on Render (free tier) - remove this step if you only need frontend
+      # Add RENDER_DEPLOY_HOOK to repo secrets: Render Dashboard > Your Service > Settings > Deploy Hook
+      - name: Trigger Render deploy
+        run: |
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            curl -sSf -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          fi
