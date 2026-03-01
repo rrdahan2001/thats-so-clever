@@ -12,10 +12,15 @@ function App() {
   const [copied, setCopied] = useState(false);
   const { gameState, lobbyPlayers, error, setError, info } = useGameState(socket, playerId);
 
-  const handleCopyRoomCode = () => {
-    if (roomId && navigator.clipboard?.writeText(roomId)) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleCopyRoomCode = async () => {
+    if (roomId && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(roomId);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // Clipboard API failed (e.g. permission denied)
+      }
     }
   };
 
