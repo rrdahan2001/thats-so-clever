@@ -220,7 +220,22 @@ describe('GameEngine', () => {
       expect(engine.getState().phase).toBe('passive');
       const silverTray = engine.getSilverTray();
       expect(silverTray.length).toBeGreaterThan(0);
-      const result = engine.passiveChooseDie('p1', 0);
+      const result = engine.passiveChooseDie('p1', 1);
+      expect(result.success).toBe(true);
+    });
+
+    it('passive player can choose white die with valid color', () => {
+      const random = makeDeterministicRandom();
+      const engine = new GameEngine('r1', makePlayers(2), random);
+      engine.rollDice('p0');
+      const purpleIdx = engine.getState().dice.findIndex((d) => d.color === 'purple' && d.available);
+      engine.selectDie('p0', purpleIdx);
+      engine.placeDie('p0', 'purple', {});
+      expect(engine.getState().phase).toBe('passive');
+      const silverTray = engine.getSilverTray();
+      const whiteIdx = silverTray.findIndex((d) => d.color === 'white');
+      expect(whiteIdx).toBeGreaterThanOrEqual(0);
+      const result = engine.passiveChooseDie('p1', whiteIdx, 'yellow');
       expect(result.success).toBe(true);
     });
   });
