@@ -1,4 +1,5 @@
 import type { GreenArea as G } from '../../types/game';
+import { GREEN_FOX_INDICES } from '../../constants/foxes';
 
 const MINS = [1, 2, 3, 4, 5, 6];
 
@@ -7,6 +8,14 @@ interface Props {
   selectedValue?: number;
   canPlace: boolean;
   onPlace: (p: Record<string, number>) => void;
+}
+
+function FoxIcon() {
+  return (
+    <span className="fox-icon" title="Fox bonus: complete this cell to earn a fox">
+      🦊
+    </span>
+  );
 }
 
 export function GreenArea({ sheet, selectedValue = 0, canPlace, onPlace }: Props) {
@@ -18,12 +27,13 @@ export function GreenArea({ sheet, selectedValue = 0, canPlace, onPlace }: Props
         {MINS.map((min, idx) => (
           <button
             key={idx}
-            className={`box ${sheet.marked[idx] !== null ? 'filled' : ''}`}
+            className={`box ${sheet.marked[idx] !== null ? 'filled' : ''} ${GREEN_FOX_INDICES.includes(idx) ? 'has-fox' : ''}`}
             disabled={!canPlace || idx !== nextIdx || selectedValue < min}
             onClick={() => canPlace && idx === nextIdx && selectedValue >= min && onPlace({})}
           >
             min {min}
             {sheet.marked[idx] !== null && `: ${sheet.marked[idx]}`}
+            {GREEN_FOX_INDICES.includes(idx) && <FoxIcon />}
           </button>
         ))}
       </div>

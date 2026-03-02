@@ -1,6 +1,13 @@
 import type { Die, DieColor, GameState, ScoringSheet } from '../types/game.js';
 import { Player } from './Player.js';
 import { getTotalScore } from '../utils/scoring.js';
+import {
+  YELLOW_FOX_POSITIONS,
+  BLUE_FOX_INDICES,
+  GREEN_FOX_INDICES,
+  ORANGE_FOX_INDICES,
+  PURPLE_FOX_INDICES,
+} from '../constants/foxes.js';
 
 const DIE_COLORS: DieColor[] = ['white', 'yellow', 'blue', 'green', 'orange', 'purple'];
 
@@ -342,18 +349,49 @@ export class GameEngine {
       if (row >= 0 && row < 6 && col >= 0 && col < 2) {
         sheet.yellow.marked[row] = sheet.yellow.marked[row] ?? [false, false];
         sheet.yellow.marked[row][col] = true;
+        this.maybeAwardFox(sheet, 'yellow', { row, col });
       }
     } else if (area === 'blue' && placement.index !== undefined) {
       sheet.blue.marked[placement.index] = true;
+      this.maybeAwardFox(sheet, 'blue', { index: placement.index });
     } else if (area === 'green') {
       const idx = sheet.green.marked.findIndex((v) => v === null);
-      if (idx >= 0) sheet.green.marked[idx] = value;
+      if (idx >= 0) {
+        sheet.green.marked[idx] = value;
+        this.maybeAwardFox(sheet, 'green', { index: idx });
+      }
     } else if (area === 'orange') {
       const idx = sheet.orange.values.findIndex((v) => v === null);
-      if (idx >= 0) sheet.orange.values[idx] = value;
+      if (idx >= 0) {
+        sheet.orange.values[idx] = value;
+        this.maybeAwardFox(sheet, 'orange', { index: idx });
+      }
     } else if (area === 'purple') {
       const idx = sheet.purple.values.findIndex((v) => v === null);
-      if (idx >= 0) sheet.purple.values[idx] = value;
+      if (idx >= 0) {
+        sheet.purple.values[idx] = value;
+        this.maybeAwardFox(sheet, 'purple', { index: idx });
+      }
+    }
+  }
+
+  private maybeAwardFox(
+    sheet: ScoringSheet,
+    area: string,
+    ctx: { row?: number; col?: number; index?: number }
+  ): void {
+    if (area === 'yellow' && ctx.row !== undefined && ctx.col !== undefined) {
+      if (YELLOW_FOX_POSITIONS.some(([r, c]) => r === ctx.row && c === ctx.col)) {
+        sheet.foxes++;
+      }
+    } else if (area === 'blue' && ctx.index !== undefined) {
+      if (BLUE_FOX_INDICES.includes(ctx.index)) sheet.foxes++;
+    } else if (area === 'green' && ctx.index !== undefined) {
+      if (GREEN_FOX_INDICES.includes(ctx.index)) sheet.foxes++;
+    } else if (area === 'orange' && ctx.index !== undefined) {
+      if (ORANGE_FOX_INDICES.includes(ctx.index)) sheet.foxes++;
+    } else if (area === 'purple' && ctx.index !== undefined) {
+      if (PURPLE_FOX_INDICES.includes(ctx.index)) sheet.foxes++;
     }
   }
 
@@ -432,6 +470,7 @@ export class GameEngine {
           if (!sheet.yellow.marked[row]?.[c]) {
             sheet.yellow.marked[row] = sheet.yellow.marked[row] ?? [false, false];
             sheet.yellow.marked[row][c] = true;
+            this.maybeAwardFox(sheet, 'yellow', { row, col: c });
             return;
           }
         }
@@ -442,6 +481,7 @@ export class GameEngine {
       const idx = sum - 2;
       if (idx >= 0 && idx <= 10 && !sheet.blue.marked[idx]) {
         sheet.blue.marked[idx] = true;
+        this.maybeAwardFox(sheet, 'blue', { index: idx });
       }
     }
     if (color === 'green') {
@@ -449,17 +489,22 @@ export class GameEngine {
       const minValues = [1, 2, 3, 4, 5, 6];
       if (idx >= 0 && value >= (minValues[idx] ?? 0)) {
         sheet.green.marked[idx] = value;
+        this.maybeAwardFox(sheet, 'green', { index: idx });
       }
     }
     if (color === 'orange') {
       const idx = sheet.orange.values.findIndex((v) => v === null);
-      if (idx >= 0) sheet.orange.values[idx] = value;
+      if (idx >= 0) {
+        sheet.orange.values[idx] = value;
+        this.maybeAwardFox(sheet, 'orange', { index: idx });
+      }
     }
     if (color === 'purple') {
       const idx = sheet.purple.values.findIndex((v) => v === null);
       const prev = idx === 0 ? 0 : (sheet.purple.values[idx - 1] ?? 0);
       if (idx >= 0 && (prev === 6 || value > prev)) {
         sheet.purple.values[idx] = value;
+        this.maybeAwardFox(sheet, 'purple', { index: idx });
       }
     }
   }

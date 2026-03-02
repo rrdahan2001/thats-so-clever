@@ -1,4 +1,5 @@
 import type { OrangeArea as O } from '../../types/game';
+import { ORANGE_FOX_INDICES } from '../../constants/foxes';
 
 const MULT = [1, 1, 1, 2, 1, 3];
 
@@ -7,6 +8,14 @@ interface Props {
   selectedValue?: number;
   canPlace: boolean;
   onPlace: (p: Record<string, number>) => void;
+}
+
+function FoxIcon() {
+  return (
+    <span className="fox-icon" title="Fox bonus: complete this cell to earn a fox">
+      🦊
+    </span>
+  );
 }
 
 export function OrangeArea({ sheet, selectedValue = 0, canPlace, onPlace }: Props) {
@@ -19,11 +28,12 @@ export function OrangeArea({ sheet, selectedValue = 0, canPlace, onPlace }: Prop
           <div key={idx} className="orange-slot">
             <span className="mult">x{MULT[idx]}</span>
             <button
-              className={`box ${v !== null ? 'filled' : ''}`}
+              className={`box ${v !== null ? 'filled' : ''} ${ORANGE_FOX_INDICES.includes(idx) ? 'has-fox' : ''}`}
               disabled={!canPlace || idx !== nextIdx}
               onClick={() => canPlace && idx === nextIdx && onPlace({})}
             >
               {v ?? (idx === nextIdx ? selectedValue : '')}
+              {ORANGE_FOX_INDICES.includes(idx) && <FoxIcon />}
             </button>
           </div>
         ))}

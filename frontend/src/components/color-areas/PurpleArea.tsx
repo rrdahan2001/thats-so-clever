@@ -1,10 +1,19 @@
 import type { PurpleArea as P } from '../../types/game';
+import { PURPLE_FOX_INDICES } from '../../constants/foxes';
 
 interface Props {
   sheet: P;
   selectedValue?: number;
   canPlace: boolean;
   onPlace: (p: Record<string, number>) => void;
+}
+
+function FoxIcon() {
+  return (
+    <span className="fox-icon" title="Fox bonus: complete this cell to earn a fox">
+      🦊
+    </span>
+  );
 }
 
 export function PurpleArea({ sheet, selectedValue = 0, canPlace, onPlace }: Props) {
@@ -19,11 +28,12 @@ export function PurpleArea({ sheet, selectedValue = 0, canPlace, onPlace }: Prop
         {sheet.values.map((v, idx) => (
           <button
             key={idx}
-            className={`box ${v !== null ? 'filled' : ''}`}
+            className={`box ${v !== null ? 'filled' : ''} ${PURPLE_FOX_INDICES.includes(idx) ? 'has-fox' : ''}`}
             disabled={!canPlace || idx !== nextIdx || !valid}
             onClick={() => canPlace && idx === nextIdx && valid && onPlace({})}
           >
             {v ?? (idx === nextIdx ? selectedValue : '')}
+            {PURPLE_FOX_INDICES.includes(idx) && <FoxIcon />}
           </button>
         ))}
       </div>
